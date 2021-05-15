@@ -1,4 +1,4 @@
-package main
+package email_client
 
 import (
 	"encoding/base64"
@@ -20,7 +20,7 @@ func getClient(config *oauth2.Config) *http.Client {
 	// The file token.json stores the user's access and refresh tokens, and is
 	// created automatically when the authorization flow completes for the first
 	// time.
-	tokFile := "token.json"
+	tokFile := "./email_client/token.json"
 	tok, err := tokenFromFile(tokFile)
 	if err != nil {
 		tok = getTokenFromWeb(config)
@@ -75,8 +75,8 @@ type Email_client struct {
 	user string
 }
 
-func makeClient(user string) *Email_client {
-	b, err := ioutil.ReadFile("credentials.json")
+func MakeClient(user string) *Email_client {
+	b, err := ioutil.ReadFile("./email_client/credentials.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
@@ -108,7 +108,7 @@ type queriedEmails struct {
 
 //Should return a list of emails.
 // Todo: change this into a list of emails. email struct with metadata.
-func (c *Email_client) queryEmails(queryString string) queriedEmails {
+func (c *Email_client) QueryEmails(queryString string) queriedEmails {
 	queriedEmails := queriedEmails{}
 	messages_servicer := gmail.NewUsersMessagesService(c.srv)
 
@@ -128,26 +128,4 @@ func (c *Email_client) queryEmails(queryString string) queriedEmails {
 		queriedEmails.emails = append(queriedEmails.emails, email)
 	}
 	return queriedEmails
-}
-
-func main() {
-
-	//user := "me"
-	user := "arvid.b901@gmail.com"
-	client := makeClient(user)
-
-	//Todo: Query for emails that are unread
-	emails := client.queryEmails("from:(Medium Daily Digest noreply@medium.com)")
-	fmt.Printf("%+v\n", emails)
-
-	/*
-		for _, x := range v {
-			print("here")
-			print(x.Payload.Body.Data)
-
-			//print(x.Payload.Body)
-
-		}
-	*/
-
 }
