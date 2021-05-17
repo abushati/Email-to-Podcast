@@ -1,2 +1,4 @@
 /email_client/credentials.json
 /email_client/token.json
+.vscode/launch.json
+__debug_bin
