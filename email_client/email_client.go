@@ -71,8 +71,26 @@ func saveToken(path string, token *oauth2.Token) {
 }
 
 type Email_client struct {
-	srv  *gmail.Service
-	user string
+	srv            *gmail.Service
+	user           string
+	messageService *gmail.UsersMessagesService
+	QueriedEmails  []Email
+}
+
+type Email struct {
+	Id   string
+	Body string
+}
+
+func getMessageService(c *Email_client) *gmail.UsersMessagesService {
+	if c.messageService == nil {
+		messages_servicer := gmail.NewUsersMessagesService(c.srv)
+		return messages_servicer
+	} else {
+		messages_servicer := c.messageService
+		return messages_servicer
+	}
+
 }
 
 func MakeClient(user string) *Email_client {
@@ -81,7 +99,8 @@ func MakeClient(user string) *Email_client {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
 	// If modifying these scopes, delete your previously saved token.json.
-	config, err := google.ConfigFromJSON(b, gmail.GmailReadonlyScope)
+	//Todo: look at the different scopes
+	config, err := google.ConfigFromJSON(b, gmail.GmailReadonlyScope, gmail.GmailLabelsScope)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
@@ -92,25 +111,17 @@ func MakeClient(user string) *Email_client {
 	if err != nil {
 		log.Fatalf("Unable to retrieve Gmail client: %v", err)
 	}
-	eml := &Email_client{srv, user}
+	eml := &Email_client{srv, user, nil, []Email{}}
 
 	return eml
 }
 
-type Email struct {
-	id   string
-	body string
-}
-
-type queriedEmails struct {
-	emails []Email
-}
-
 //Should return a list of emails.
 // Todo: change this into a list of emails. email struct with metadata.
-func (c *Email_client) QueryEmails(queryString string) queriedEmails {
-	queriedEmails := queriedEmails{}
-	messages_servicer := gmail.NewUsersMessagesService(c.srv)
+func (c *Email_client) QueryEmails(queryString string) {
+	var queriedEmails []Email
+
+	messages_servicer := getMessageService(c)
 
 	emailsCall := c.srv.Users.Messages.List(c.user)
 	emailsCall.Q(queryString)
@@ -119,13 +130,43 @@ func (c *Email_client) QueryEmails(queryString string) queriedEmails {
 	//print(&matchedMessages)
 	v := matchedMessages
 	for _, email := range v {
-		body, _ := messages_servicer.Get(c.user, email.Id).Format("full").Do()
+		pulledEmail, _ := messages_servicer.Get(c.user, email.Id).Format("full").Do()
 		//fmt.Printf("%+v\n", body.Payload.Parts[0].Body.Data)
-		emailByte, _ := base64.URLEncoding.DecodeString(body.Payload.Parts[0].Body.Data)
+		emailByte, _ := base64.URLEncoding.DecodeString(pulledEmail.Payload.Parts[0].Body.Data)
 		emailString := string(emailByte)
 
 		email := Email{email.Id, emailString}
-		queriedEmails.emails = append(queriedEmails.emails, email)
+		queriedEmails = append(queriedEmails, email)
 	}
-	return queriedEmails
+	c.QueriedEmails = append(c.QueriedEmails, queriedEmails...)
+
 }
+
+//Todo: perhaps private method
+func (c *Email_client) SaveEmails() {
+	if len(c.QueriedEmails) != 0 {
+		print(" emails saved")
+
+	} else {
+		print("no emails to save")
+	}
+}
+
+func (c *Email_client) MarkEmailRead() {
+	modifyRequest := &gmail.ModifyMessageRequest{RemoveLabelIds: []string{"UNREAD"}}
+	messages_servicer := getMessageService(c)
+	res, err := messages_servicer.Modify(c.user, "179742756ef03ead", modifyRequest).Do()
+	//removeLabelId of "UNREAD
+	println(res)
+	println(err.Error())
+}
+
+/*
+func (c *Email_client) MarkEmailRead(e Email) {
+	modifyRequest := &gmail.ModifyMessageRequest{RemoveLabelIds: []string{"UNREAD"}}
+	messages_servicer := getMessageService(c)
+	messages_servicer.Modify(c.user, "179742756ef03ead", modifyRequest)
+	//removeLabelId of "UNREAD
+
+}
+*/
