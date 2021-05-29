@@ -1,6 +1,7 @@
 package main
 
 import (
+	"email_podcast/database"
 	"email_podcast/email_client"
 	"io"
 	"log"
@@ -19,9 +20,13 @@ func main() {
 
 	//fmt.Printf("%+v\n", client.QueriedEmails)
 
-	client.MarkEmailRead()
+	client.MarkEmailRead("2314")
 	//fmt.Printf("%+v\n", client.QueriedEmails[0])
 
+	db := database.OpenConnection()
+	sqlStatement := `INSERT INTO person (name, nickname) VALUES ('12', '12')`
+	_, err := db.Exec(sqlStatement)
+	print(err.Error())
 }
 
 func getToken() {
