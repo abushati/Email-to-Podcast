@@ -90,7 +90,6 @@ func getMessageService(c *Email_client) *gmail.UsersMessagesService {
 		messages_servicer := c.messageService
 		return messages_servicer
 	}
-
 }
 
 func MakeClient(user string) *Email_client {
@@ -100,7 +99,8 @@ func MakeClient(user string) *Email_client {
 	}
 	// If modifying these scopes, delete your previously saved token.json.
 	//Todo: look at the different scopes
-	config, err := google.ConfigFromJSON(b, gmail.GmailReadonlyScope, gmail.GmailLabelsScope)
+	scope := []string{gmail.GmailReadonlyScope, gmail.GmailLabelsScope, gmail.GmailModifyScope}
+	config, err := google.ConfigFromJSON(b, scope...)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
 	}
@@ -152,13 +152,16 @@ func (c *Email_client) SaveEmails() {
 	}
 }
 
-func (c *Email_client) MarkEmailRead() {
+func (c *Email_client) MarkEmailRead(emailID string) {
 	modifyRequest := &gmail.ModifyMessageRequest{RemoveLabelIds: []string{"UNREAD"}}
 	messages_servicer := getMessageService(c)
-	res, err := messages_servicer.Modify(c.user, "179742756ef03ead", modifyRequest).Do()
+	res, err := messages_servicer.Modify(c.user, emailID, modifyRequest).Do()
 	//removeLabelId of "UNREAD
-	println(res)
-	println(err.Error())
+	if err != nil {
+		print("here")
+		println(res)
+	}
+
 }
 
 /*
