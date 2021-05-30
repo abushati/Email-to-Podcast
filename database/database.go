@@ -7,9 +7,13 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type Person struct {
-	Name     string `json:"name"`
-	Nickname string `json:"nickname"`
+type Podcast struct {
+	title         string
+	emailId       string
+	pathToRawFile string
+	pathToMP3File string
+	isConverted   bool
+	links         []string
 }
 
 const (
