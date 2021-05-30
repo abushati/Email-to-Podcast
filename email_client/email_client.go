@@ -98,8 +98,7 @@ func MakeClient(user string) *Email_client {
 		log.Fatalf("Unable to read client secret file: %v", err)
 	}
 	// If modifying these scopes, delete your previously saved token.json.
-	//Todo: look at the different scopes
-	scope := []string{gmail.GmailReadonlyScope, gmail.GmailLabelsScope, gmail.GmailModifyScope}
+	scope := []string{gmail.GmailReadonlyScope, gmail.GmailModifyScope}
 	config, err := google.ConfigFromJSON(b, scope...)
 	if err != nil {
 		log.Fatalf("Unable to parse client secret file to config: %v", err)
